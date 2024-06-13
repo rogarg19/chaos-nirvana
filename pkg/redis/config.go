@@ -10,11 +10,12 @@ type Configuration struct {
 }
 
 type RedisConfig struct {
-	Host     string  `json:"host"`
-	Port     int     `json:"port"`
-	Password string  `json:"password"`
-	Db       string  `json:"db"`
-	Options  Options `json:"options"`
+	Host      string  `json:"host"`
+	Port      int     `json:"port"`
+	Password  string  `json:"password"`
+	Db        int     `json:"db"`
+	Options   Options `json:"options"`
+	IsCluster bool    `json:"isCluster"`
 }
 
 type Options struct {

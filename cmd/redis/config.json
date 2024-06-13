@@ -1,11 +1,12 @@
 {
     "Redis" : {
-        "host" : "127.0.0.1",
+        "host" : "localhost",
+        "isCluster" : false,
         "port" : 6379,
         "password" : "",
-        "db" : "0",
+        "db" : 0,
         "options" : {
-            "connections" : 100,
+            "connections" : 10,
             "tls" : {
                 "insecure" : true
             }

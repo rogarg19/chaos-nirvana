@@ -20,6 +20,8 @@ func (*RedisChaos) Start() {
 
 	config := loadConfig(configPath)
 
+	log.Printf("%+v", config)
+
 	var done = make(chan struct{}, 1)
 
 	go func() {
@@ -53,8 +55,18 @@ func (*RedisChaos) Start() {
 func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	defer wg.Done()
 
-	client := getRedisClient(config)
+	client := getClient(config)
 	defer client.Close()
+
+	clientCtx, clientCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer clientCancel()
+
+	pong, pingErr := client.Ping(clientCtx).Result()
+
+	if pingErr != nil {
+		panic(pingErr.Error())
+	}
+	log.Println(pong)
 
 	// simulate long running connections
 
@@ -63,16 +75,14 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			innerCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
+			innerCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			// _, err := client.Keys(innerCtx, "foo*").Result()
-			val, err := client.Get(innerCtx, "foo*").Result()
+			//_, err := client.Keys(innerCtx, "foo*").Result()
+			_, err := client.Get(innerCtx, "foo*").Result()
 
 			if err != nil {
 				log.Println(err)
-				continue
 			}
-			log.Println(val)
 		case <-ctx.Done():
 			return
 		}
