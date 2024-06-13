@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/gargrohit2523/chaos-nirvana/pkg/config"
 	"github.com/redis/go-redis/v9"
 )
 
-func getRedisClient(config config.Configuration) *redis.ClusterClient {
+func getRedisClient(config Configuration) *redis.ClusterClient {
 	client := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:    []string{fmt.Sprintf("%s:%s", config.RedisConfig.Host, strconv.Itoa(config.RedisConfig.Port))},
 		Password: "",

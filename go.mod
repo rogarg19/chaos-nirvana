@@ -1,4 +1,4 @@
-module github.com/gargrohit2523/chaos-nirvana
+module github.com/rogarg19/chaos-nirvana
 
 go 1.19
 

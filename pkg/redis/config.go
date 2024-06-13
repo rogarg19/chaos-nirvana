@@ -1,4 +1,4 @@
-package config
+package redis
 
 import (
 	"encoding/json"
@@ -26,9 +26,9 @@ type Tls struct {
 	InsecureSkipVerify bool `json:"insecure"`
 }
 
-func LoadConfig() Configuration {
+func loadConfig(path *string) Configuration {
 	var config Configuration = Configuration{}
-	raw, err := os.ReadFile("config.json")
+	raw, err := os.ReadFile(*path)
 
 	if err != nil {
 		panic(err)
