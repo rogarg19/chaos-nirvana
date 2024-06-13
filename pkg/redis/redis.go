@@ -58,16 +58,6 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	client := getClient(config)
 	defer client.Close()
 
-	clientCtx, clientCancel := context.WithTimeout(context.Background(), 15*time.Minute)
-	defer clientCancel()
-
-	pong, pingErr := client.Ping(clientCtx).Result()
-
-	if pingErr != nil {
-		panic(pingErr.Error())
-	}
-	log.Println(pong)
-
 	// simulate long running connections
 
 	ticker := time.NewTicker(100 * time.Millisecond)
@@ -75,7 +65,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			innerCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			innerCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 			defer cancel()
 
 			_, err := client.Keys(innerCtx, "foo*").Result()
