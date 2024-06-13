@@ -58,7 +58,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	client := getClient(config)
 	defer client.Close()
 
-	clientCtx, clientCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	clientCtx, clientCancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer clientCancel()
 
 	pong, pingErr := client.Ping(clientCtx).Result()
