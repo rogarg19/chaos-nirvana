@@ -77,8 +77,8 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 		case <-ticker.C:
 			innerCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			//_, err := client.Keys(innerCtx, "foo*").Result()
-			_, err := client.Get(innerCtx, "foo*").Result()
+
+			_, err := client.Keys(innerCtx, "foo*").Result()
 
 			if err != nil {
 				log.Println(err)
