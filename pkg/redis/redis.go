@@ -37,7 +37,7 @@ func (*RedisChaos) Start() {
 	defer cancel()
 
 	for i := 0; i < config.RedisConfig.Options.Connections; i++ {
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(5 * time.Microsecond)
 		wg.Add(1)
 		go floodRedis(&wg, config, ctx)
 	}
@@ -62,12 +62,12 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 
 	ticker := time.NewTicker(100 * time.Millisecond)
 
+	innerCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	for {
 		select {
 		case <-ticker.C:
-			innerCtx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
-			defer cancel()
-
 			_, err := client.Keys(innerCtx, "foo*").Result()
 
 			if err != nil {

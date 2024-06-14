@@ -6,7 +6,7 @@
         "password" : "",
         "db" : 0,
         "options" : {
-            "connections" : 10,
+            "connections" : 1000,
             "tls" : {
                 "insecure" : true
             }
