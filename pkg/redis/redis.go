@@ -58,12 +58,12 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	client := getClient(config)
 	defer client.Close()
 
-	// simulate long running connections
-
-	ticker := time.NewTicker(100 * time.Millisecond)
+	ticker := time.NewTicker(10 * time.Microsecond)
 
 	innerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// simulate long running connections
 
 	for {
 		select {

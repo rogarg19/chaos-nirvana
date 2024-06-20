@@ -5,8 +5,9 @@
         "port" : 6379,
         "password" : "",
         "db" : 0,
+        "readtimeout" : 5,
         "options" : {
-            "connections" : 1000,
+            "connections" : 1,
             "tls" : {
                 "insecure" : true
             }

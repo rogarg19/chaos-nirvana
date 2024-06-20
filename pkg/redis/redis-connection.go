@@ -25,8 +25,9 @@ func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: config.RedisConfig.Options.Tls.InsecureSkipVerify,
 		},
+		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 	})
-
 	return client
 }
 
