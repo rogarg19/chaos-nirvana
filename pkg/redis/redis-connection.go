@@ -27,15 +27,19 @@ func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 		},
 		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 	})
 	return client
 }
 
 func getRedisClient(config Configuration) *redis.Client {
 	client := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", config.RedisConfig.Host, strconv.Itoa(config.RedisConfig.Port)),
-		Password: "",
-		DB:       config.RedisConfig.Db,
+		Addr:         fmt.Sprintf("%s:%s", config.RedisConfig.Host, strconv.Itoa(config.RedisConfig.Port)),
+		Password:     "",
+		DB:           config.RedisConfig.Db,
+		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
+		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 	})
 
 	return client

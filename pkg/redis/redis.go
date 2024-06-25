@@ -69,12 +69,17 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	innerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// simulate long running connections
+	var randomKey string
 
+	if len(config.RedisConfig.CustomKeyPrefix) > 0 {
+		randomKey = fmt.Sprintf("%s_%s%s", config.RedisConfig.CustomKeyPrefix, randSeq(5), "*")
+	} else {
+		randomKey = fmt.Sprintf("%s%s", randSeq(5), "*")
+	}
+	// simulate long running connections
 	for {
 		select {
 		case <-ticker.C:
-			randomKey := fmt.Sprintf("%s%s", randSeq(5), "*")
 			_, err := client.Keys(innerCtx, randomKey).Result()
 
 			if err != nil {
