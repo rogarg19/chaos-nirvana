@@ -81,7 +81,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			_, err := client.Keys(innerCtx, randomKey).Result()
+			_, err := client.Get(innerCtx, randomKey).Result()
 
 			if err != nil {
 				if strings.Contains(err.Error(), "unknown command") {
