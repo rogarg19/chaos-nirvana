@@ -64,7 +64,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	client := getClient(config)
 	defer client.Close()
 
-	ticker := time.NewTicker(10 * time.Microsecond)
+	ticker := time.NewTicker(50 * time.Millisecond)
 
 	innerCtx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -84,6 +84,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 
 			if err != nil {
 				log.Println(err)
+				time.Sleep(50 * time.Millisecond)
 			}
 		case <-ctx.Done():
 			return
