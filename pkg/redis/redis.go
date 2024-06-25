@@ -3,11 +3,15 @@ package redis
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"sync"
 	"time"
 )
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
 type RedisChaos struct{}
 
@@ -35,6 +39,8 @@ func (*RedisChaos) Start() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	for i := 0; i < config.RedisConfig.Options.Connections; i++ {
 		time.Sleep(5 * time.Microsecond)
@@ -68,7 +74,8 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			_, err := client.Keys(innerCtx, "foo*").Result()
+			randomKey := fmt.Sprintf("%s%s", randSeq(5), "*")
+			_, err := client.Keys(innerCtx, randomKey).Result()
 
 			if err != nil {
 				log.Println(err)
@@ -77,4 +84,12 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 			return
 		}
 	}
+}
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
