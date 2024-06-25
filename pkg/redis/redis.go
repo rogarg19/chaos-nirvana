@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -83,8 +84,12 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 			_, err := client.Keys(innerCtx, randomKey).Result()
 
 			if err != nil {
-				log.Println(err)
-				time.Sleep(50 * time.Millisecond)
+				if strings.Contains(err.Error(), "unknown command") {
+					continue
+				} else {
+					log.Println(err)
+					time.Sleep(50 * time.Millisecond)
+				}
 			}
 		case <-ctx.Done():
 			return
