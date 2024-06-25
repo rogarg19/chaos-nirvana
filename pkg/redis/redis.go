@@ -88,7 +88,6 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 					continue
 				} else {
 					log.Println(err)
-					time.Sleep(50 * time.Millisecond)
 				}
 			}
 		case <-ctx.Done():
