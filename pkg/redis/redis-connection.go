@@ -28,6 +28,7 @@ func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		PoolSize:     config.RedisConfig.PoolSize,
 	})
 	return client
 }
@@ -40,6 +41,7 @@ func getRedisClient(config Configuration) *redis.Client {
 		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		PoolSize:     config.RedisConfig.PoolSize,
 	})
 
 	return client

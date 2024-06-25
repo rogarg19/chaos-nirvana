@@ -20,6 +20,7 @@ type RedisConfig struct {
 	WriteTimeout    int     `json:"writetimeout"`
 	DialTimeout     int     `json:"dialtimeout"`
 	CustomKeyPrefix string  `json:"customkeyprefix"`
+	PoolSize        int     `json:"poolsize"`
 }
 
 type Options struct {
