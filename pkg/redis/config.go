@@ -10,17 +10,18 @@ type Configuration struct {
 }
 
 type RedisConfig struct {
-	Host            string  `json:"host"`
-	Port            int     `json:"port"`
-	Password        string  `json:"password"`
-	Db              int     `json:"db"`
-	Options         Options `json:"options"`
-	IsCluster       bool    `json:"isCluster"`
-	ReadTimeout     int     `json:"readtimeout"`
-	WriteTimeout    int     `json:"writetimeout"`
-	DialTimeout     int     `json:"dialtimeout"`
-	CustomKeyPrefix string  `json:"customkeyprefix"`
-	PoolSize        int     `json:"poolsize"`
+	Host                 string  `json:"host"`
+	Port                 int     `json:"port"`
+	Password             string  `json:"password"`
+	Db                   int     `json:"db"`
+	Options              Options `json:"options"`
+	IsCluster            bool    `json:"isCluster"`
+	ReadTimeout          int     `json:"readtimeout"`
+	WriteTimeout         int     `json:"writetimeout"`
+	DialTimeout          int     `json:"dialtimeout"`
+	CustomKeyPrefix      string  `json:"customkeyprefix"`
+	PoolSize             int     `json:"poolsize"`
+	IsKeysCommandEnabled bool    `json:"iskeyscommandenabled"`
 }
 
 type Options struct {

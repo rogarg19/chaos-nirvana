@@ -7,7 +7,6 @@ import (
 	"log"
 	"math/rand"
 	"os"
-	"strings"
 	"sync"
 	"time"
 )
@@ -62,7 +61,7 @@ func (*RedisChaos) Start() {
 func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	defer wg.Done()
 
-	client := getClient(config)
+	client := getRedisClient(config)
 	defer client.Close()
 
 	ticker := time.NewTicker(50 * time.Millisecond)
@@ -81,15 +80,10 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	for {
 		select {
 		case <-ticker.C:
-			_, err := client.Get(innerCtx, randomKey).Result()
-
-			if err != nil {
-				if strings.Contains(err.Error(), "unknown command") {
-					continue
-				} else {
-					log.Println(err)
-					time.Sleep(5 * time.Second)
-				}
+			if config.RedisConfig.IsKeysCommandEnabled {
+				_, _ = client.Keys(innerCtx, randomKey).Result()
+			} else {
+				_, _ = client.HGetAll(innerCtx, randomKey).Result()
 			}
 		case <-ctx.Done():
 			return
