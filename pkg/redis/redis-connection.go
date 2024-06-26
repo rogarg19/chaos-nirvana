@@ -15,6 +15,7 @@ type redisClient interface {
 	Get(context.Context, string) *redis.StringCmd
 	Set(context.Context, string, interface{}, time.Duration) *redis.StatusCmd
 	Keys(context.Context, string) *redis.StringSliceCmd
+	HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd
 	Close() error
 }
 

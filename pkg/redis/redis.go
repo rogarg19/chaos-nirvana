@@ -63,7 +63,7 @@ func (*RedisChaos) Start() {
 func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 	defer wg.Done()
 
-	client := getRedisClient(config)
+	client := getClient(config)
 	defer client.Close()
 
 	ticker := time.NewTicker(50 * time.Millisecond)
