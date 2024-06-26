@@ -9,6 +9,8 @@ import (
 	"os"
 	"sync"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -77,13 +79,20 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 		randomKey = fmt.Sprintf("%s%s", randSeq(5), "*")
 	}
 	// simulate long running connections
+
 	for {
 		select {
 		case <-ticker.C:
 			if config.RedisConfig.IsKeysCommandEnabled {
-				_, _ = client.Keys(innerCtx, randomKey).Result()
+				_, keyErr := client.Keys(innerCtx, randomKey).Result()
+				log.Println(keyErr)
 			} else {
-				_, _ = client.HGetAll(innerCtx, randomKey).Result()
+				_, getErr := client.HGetAll(innerCtx, randomKey).Result()
+
+				if getErr == redis.Nil {
+					continue
+				}
+				log.Println(getErr)
 			}
 		case <-ctx.Done():
 			return
