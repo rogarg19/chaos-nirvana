@@ -89,7 +89,7 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 			} else {
 				_, getErr := client.HGetAll(innerCtx, randomKey).Result()
 
-				if getErr == redis.Nil {
+				if getErr == redis.Nil || getErr == nil {
 					continue
 				}
 				log.Println(getErr)
