@@ -6,9 +6,10 @@
         "password" : "",
         "db" : 0,
         "readtimeout" : 5,
+        "infointerval" : 30,
         "iskeyscommandenabled" : false,
         "options" : {
-            "connections" : 1,
+            "connections" : 10,
             "tls" : {
                 "insecure" : true
             }
