@@ -16,6 +16,7 @@ type redisClient interface {
 	Set(context.Context, string, interface{}, time.Duration) *redis.StatusCmd
 	Keys(context.Context, string) *redis.StringSliceCmd
 	HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd
+	Info(ctx context.Context, sections ...string) *redis.StringCmd
 	Close() error
 }
 
@@ -44,6 +45,8 @@ func getRedisClient(config Configuration) *redis.Client {
 		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
 		PoolSize:     config.RedisConfig.PoolSize,
 	})
+
+	client.Info(context.Background())
 
 	return client
 }

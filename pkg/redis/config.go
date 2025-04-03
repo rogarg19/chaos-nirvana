@@ -18,6 +18,7 @@ type RedisConfig struct {
 	IsCluster            bool    `json:"isCluster"`
 	ReadTimeout          int     `json:"readtimeout"`
 	WriteTimeout         int     `json:"writetimeout"`
+	InfoInterval         int     `json:"infointerval"`
 	DialTimeout          int     `json:"dialtimeout"`
 	CustomKeyPrefix      string  `json:"customkeyprefix"`
 	PoolSize             int     `json:"poolsize"`

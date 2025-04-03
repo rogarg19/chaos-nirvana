@@ -50,6 +50,9 @@ func (*RedisChaos) Start() {
 		go floodRedis(&wg, config, ctx)
 	}
 
+	wg.Add(1)
+	go redisInfo(&wg, config, ctx)
+
 	<-done
 
 	//cancel the child goroutines
@@ -68,9 +71,6 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 
 	ticker := time.NewTicker(50 * time.Millisecond)
 
-	innerCtx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	var randomKey string
 
 	if len(config.RedisConfig.CustomKeyPrefix) > 0 {
@@ -84,16 +84,41 @@ func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 		select {
 		case <-ticker.C:
 			if config.RedisConfig.IsKeysCommandEnabled {
-				_, keyErr := client.Keys(innerCtx, randomKey).Result()
+				_, keyErr := client.Keys(ctx, randomKey).Result()
 				log.Println(keyErr)
 			} else {
-				_, getErr := client.HGetAll(innerCtx, randomKey).Result()
+				_, getErr := client.HGetAll(ctx, randomKey).Result()
 
 				if getErr == redis.Nil || getErr == nil {
 					continue
 				}
 				log.Println(getErr)
 			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func redisInfo(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
+	defer wg.Done()
+
+	client := getClient(config)
+	defer client.Close()
+
+	var Red = "\033[31m"
+	const colorNone = "\033[0m"
+
+	ticker := time.NewTicker(time.Duration(config.RedisConfig.InfoInterval) * time.Second)
+
+	for {
+		select {
+		case <-ticker.C:
+			info := client.Info(ctx, "clients", "cpu")
+			fmt.Println("*****")
+			fmt.Fprintf(os.Stdout, "%s %s", Red, info)
+			fmt.Println("*****")
+			fmt.Fprintf(os.Stdout, "%s", colorNone)
 		case <-ctx.Done():
 			return
 		}
