@@ -1,0 +1,21 @@
+{
+    "elasticache" : {
+        "host" : "localhost",
+        "isCluster" : false,
+        "port" : 6379,
+        "password" : "",
+        "db" : 0,
+        "readtimeout" : 5,
+        "infointerval" : 30,
+        "iskeyscommandenabled" : false,
+        "enableCpuSpike" : true,
+        "enableLargeKey" : true,
+        "largeKeySize" : 10,
+        "options" : {
+            "connections" : 10,
+            "tls" : {
+                "insecure" : true
+            }
+        }
+    }
+}

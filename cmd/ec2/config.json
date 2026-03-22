@@ -1,0 +1,8 @@
+{
+    "ec2" : {
+        "enableHighCpu" : true,
+        "enableFullDisk" : true,
+        "diskFillPath" : "/tmp/chaos",
+        "cpuCores" : 0
+    }
+}
