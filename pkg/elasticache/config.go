@@ -24,9 +24,10 @@ type ElastiCacheConfig struct {
 	PoolSize             int     `json:"poolsize"`
 	IsKeysCommandEnabled bool    `json:"iskeyscommandenabled"`
 	// Additional for chaos
-	EnableCPUSpike       bool `json:"enableCpuSpike"`
-	EnableLargeKey       bool `json:"enableLargeKey"`
-	LargeKeySize         int  `json:"largeKeySize"` // in MB
+	EnableCPUSpike  bool `json:"enableCpuSpike"`
+	EnableLargeKey  bool `json:"enableLargeKey"`
+	LargeKeySize    int  `json:"largeKeySize"` // in MB
+	CPUSpikeWorkers int  `json:"cpuSpikeWorkers"`
 }
 
 type Options struct {
@@ -38,9 +39,9 @@ type Tls struct {
 	InsecureSkipVerify bool `json:"insecure"`
 }
 
-func loadConfig(path *string) Configuration {
+func LoadConfig(path string) Configuration {
 	var config Configuration = Configuration{}
-	raw, err := os.ReadFile(*path)
+	raw, err := os.ReadFile(path)
 
 	if err != nil {
 		panic(err)
@@ -52,4 +53,8 @@ func loadConfig(path *string) Configuration {
 		panic(unmarshalError)
 	}
 	return config
+}
+
+func loadConfig(path *string) Configuration {
+	return LoadConfig(*path)
 }

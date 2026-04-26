@@ -3,13 +3,14 @@ package ec2
 import (
 	"context"
 	"flag"
-	"fmt"
 	"log"
 	"math"
 	"os"
 	"runtime"
 	"sync"
 	"time"
+
+	"github.com/rogarg19/chaos-nirvana/pkg/scenario"
 )
 
 type EC2Chaos struct{}
@@ -20,17 +21,42 @@ func New() *EC2Chaos {
 
 func (*EC2Chaos) Start() {
 	var configPath *string = flag.String("config", "config.json", "configuration file for chaos")
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	config := loadConfig(configPath)
+	Run(config, 0)
+}
 
+func ConfigFromScenario(base Configuration, s scenario.Scenario) Configuration {
+	switch s.Action {
+	case scenario.ActionEC2HighCPU:
+		base.EC2Config.EnableHighCPU = true
+		base.EC2Config.CPUCores = s.Parameters.CPUCores
+	case scenario.ActionEC2FullDisk:
+		base.EC2Config.EnableFullDisk = true
+		base.EC2Config.DiskFillPath = s.Parameters.DiskFillPath
+	}
+	return base
+}
+
+func Run(config Configuration, duration time.Duration) {
 	log.Printf("%+v", config)
 
 	var done = make(chan struct{}, 1)
 
-	go func() {
-		os.Stdin.Read(make([]byte, 1))
-		close(done)
-	}()
+	if duration > 0 {
+		go func() {
+			<-time.After(duration)
+			close(done)
+		}()
+	} else {
+		go func() {
+			os.Stdin.Read(make([]byte, 1))
+			close(done)
+		}()
+	}
 
 	var wg sync.WaitGroup
 

@@ -10,15 +10,15 @@ type Configuration struct {
 }
 
 type EC2Config struct {
-	EnableHighCPU   bool `json:"enableHighCpu"`
-	EnableFullDisk  bool `json:"enableFullDisk"`
-	DiskFillPath    string `json:"diskFillPath"` // Path to fill disk, e.g., "/tmp/chaos"
-	CPUCores        int `json:"cpuCores"` // Number of cores to utilize
+	EnableHighCPU  bool   `json:"enableHighCpu"`
+	EnableFullDisk bool   `json:"enableFullDisk"`
+	DiskFillPath   string `json:"diskFillPath"` // Path to fill disk, e.g., "/tmp/chaos"
+	CPUCores       int    `json:"cpuCores"`     // Number of cores to utilize
 }
 
-func loadConfig(path *string) Configuration {
+func LoadConfig(path string) Configuration {
 	var config Configuration = Configuration{}
-	raw, err := os.ReadFile(*path)
+	raw, err := os.ReadFile(path)
 
 	if err != nil {
 		panic(err)
@@ -30,4 +30,8 @@ func loadConfig(path *string) Configuration {
 		panic(unmarshalError)
 	}
 	return config
+}
+
+func loadConfig(path *string) Configuration {
+	return LoadConfig(*path)
 }

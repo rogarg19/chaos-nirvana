@@ -9,6 +9,7 @@ A comprehensive tool for chaos engineering simulations across various cloud serv
 - Real-time monitoring and logging
 - Graceful shutdown handling
 - JSON-based configuration
+- Plain-English scenario parsing for common chaos commands
 
 ## Supported Services
 
@@ -24,6 +25,9 @@ Extends Redis chaos with:
 Simulates infrastructure-level chaos:
 - High CPU usage across all cores
 - Disk space exhaustion
+
+### Kubernetes
+Supports pod failure scenarios through `kubectl`.
 
 ## Installation
 
@@ -44,6 +48,18 @@ Run the tool with the appropriate service type and configuration:
 ./chaos-nirvana -type <service> -config <config_file>
 ```
 
+Or run a plain-English scenario:
+
+```bash
+./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout"
+```
+
+Preview the parsed scenario before executing it:
+
+```bash
+./chaos-nirvana -prompt "put load on redis cluster such that CPU usage spikes to 90% for more than 15 minutes" -dry-run
+```
+
 ### Examples
 
 #### Redis Chaos
@@ -59,6 +75,17 @@ Run the tool with the appropriate service type and configuration:
 #### EC2 Chaos
 ```bash
 ./chaos-nirvana -type ec2 -config cmd/ec2/config.json
+```
+
+#### Kubernetes Pod Chaos
+```bash
+./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout"
+```
+
+By default, service prompts map to the selector `app=<service>`. You can provide an explicit selector:
+
+```bash
+./chaos-nirvana -prompt "Kill 2 pods with selector app=payments in namespace checkout"
 ```
 
 The tool will start the chaos simulation and run until interrupted (Ctrl+C). It provides real-time logging and monitoring output.

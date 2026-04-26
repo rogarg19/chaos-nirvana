@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/rogarg19/chaos-nirvana/pkg/scenario"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -23,17 +24,70 @@ func New() *RedisChaos {
 
 func (*RedisChaos) Start() {
 	var configPath *string = flag.String("config", "config.json", "configuration file for chaos")
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	config := loadConfig(configPath)
+	Run(config, 0)
+}
 
+func ConfigFromScenario(base Configuration, s scenario.Scenario) Configuration {
+	if base.RedisConfig.Host == "" {
+		base.RedisConfig.Host = "localhost"
+	}
+	if base.RedisConfig.Port == 0 {
+		base.RedisConfig.Port = 6379
+	}
+	if base.RedisConfig.ReadTimeout == 0 {
+		base.RedisConfig.ReadTimeout = 5
+	}
+	if base.RedisConfig.WriteTimeout == 0 {
+		base.RedisConfig.WriteTimeout = 5
+	}
+	if base.RedisConfig.DialTimeout == 0 {
+		base.RedisConfig.DialTimeout = 5
+	}
+	if base.RedisConfig.InfoInterval == 0 {
+		base.RedisConfig.InfoInterval = 30
+	}
+	if base.RedisConfig.Options.Connections == 0 {
+		base.RedisConfig.Options.Connections = 10
+	}
+
+	if s.Parameters.Connections > 0 {
+		base.RedisConfig.Options.Connections = s.Parameters.Connections
+	}
+	base.RedisConfig.IsCluster = s.Parameters.Cluster
+	if s.Target.Host != "" {
+		base.RedisConfig.Host = s.Target.Host
+	}
+	if s.Parameters.UseKeysCommand {
+		base.RedisConfig.IsKeysCommandEnabled = true
+	}
+	if s.Action == scenario.ActionRedisCPUSpike {
+		base.RedisConfig.EnableCPUSpike = true
+		base.RedisConfig.CPUSpikeWorkers = cpuSpikeWorkers(s.Parameters.CPUPercent)
+	}
+	return base
+}
+
+func Run(config Configuration, duration time.Duration) {
 	log.Printf("%+v", config)
 
 	var done = make(chan struct{}, 1)
 
-	go func() {
-		os.Stdin.Read(make([]byte, 1))
-		close(done)
-	}()
+	if duration > 0 {
+		go func() {
+			<-time.After(duration)
+			close(done)
+		}()
+	} else {
+		go func() {
+			os.Stdin.Read(make([]byte, 1))
+			close(done)
+		}()
+	}
 
 	var wg sync.WaitGroup
 
@@ -53,6 +107,17 @@ func (*RedisChaos) Start() {
 	wg.Add(1)
 	go redisInfo(&wg, config, ctx)
 
+	if config.RedisConfig.EnableCPUSpike {
+		workers := config.RedisConfig.CPUSpikeWorkers
+		if workers == 0 {
+			workers = 5
+		}
+		for i := 0; i < workers; i++ {
+			wg.Add(1)
+			go cpuSpike(&wg, config, ctx)
+		}
+	}
+
 	<-done
 
 	//cancel the child goroutines
@@ -61,6 +126,49 @@ func (*RedisChaos) Start() {
 	log.Println("waiting for all child goroutines to exit gracefully...")
 	wg.Wait()
 	log.Println("all goroutines finished.")
+}
+
+func cpuSpikeWorkers(cpuPercent int) int {
+	if cpuPercent <= 0 {
+		return 5
+	}
+	workers := (cpuPercent + 19) / 20
+	if workers < 1 {
+		return 1
+	}
+	if workers > 10 {
+		return 10
+	}
+	return workers
+}
+
+func cpuSpike(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
+	defer wg.Done()
+
+	client := getClient(config)
+	defer client.Close()
+
+	script := `
+	local function fib(n)
+		if n <= 1 then return n end
+		return fib(n-1) + fib(n-2)
+	end
+	return fib(35)
+	`
+
+	ticker := time.NewTicker(100 * time.Millisecond)
+
+	for {
+		select {
+		case <-ticker.C:
+			_, err := client.Eval(ctx, script, []string{}, nil).Result()
+			if err != nil {
+				log.Printf("CPU spike eval error: %v", err)
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func floodRedis(wg *sync.WaitGroup, config Configuration, ctx context.Context) {

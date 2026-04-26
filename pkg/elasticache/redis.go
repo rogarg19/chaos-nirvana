@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"github.com/rogarg19/chaos-nirvana/pkg/scenario"
 )
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
@@ -24,17 +25,74 @@ func New() *ElastiCacheChaos {
 
 func (*ElastiCacheChaos) Start() {
 	var configPath *string = flag.String("config", "config.json", "configuration file for chaos")
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	config := loadConfig(configPath)
+	Run(config, 0)
+}
 
+func ConfigFromScenario(base Configuration, s scenario.Scenario) Configuration {
+	if base.ElastiCacheConfig.Host == "" {
+		base.ElastiCacheConfig.Host = "localhost"
+	}
+	if base.ElastiCacheConfig.Port == 0 {
+		base.ElastiCacheConfig.Port = 6379
+	}
+	if base.ElastiCacheConfig.ReadTimeout == 0 {
+		base.ElastiCacheConfig.ReadTimeout = 5
+	}
+	if base.ElastiCacheConfig.WriteTimeout == 0 {
+		base.ElastiCacheConfig.WriteTimeout = 5
+	}
+	if base.ElastiCacheConfig.DialTimeout == 0 {
+		base.ElastiCacheConfig.DialTimeout = 5
+	}
+	if base.ElastiCacheConfig.InfoInterval == 0 {
+		base.ElastiCacheConfig.InfoInterval = 30
+	}
+	if base.ElastiCacheConfig.Options.Connections == 0 {
+		base.ElastiCacheConfig.Options.Connections = 10
+	}
+
+	if s.Parameters.Connections > 0 {
+		base.ElastiCacheConfig.Options.Connections = s.Parameters.Connections
+	}
+	base.ElastiCacheConfig.IsCluster = s.Parameters.Cluster
+	if s.Target.Host != "" {
+		base.ElastiCacheConfig.Host = s.Target.Host
+	}
+	if s.Parameters.UseKeysCommand {
+		base.ElastiCacheConfig.IsKeysCommandEnabled = true
+	}
+	if s.Action == scenario.ActionRedisCPUSpike {
+		base.ElastiCacheConfig.EnableCPUSpike = true
+		base.ElastiCacheConfig.CPUSpikeWorkers = cpuSpikeWorkers(s.Parameters.CPUPercent)
+	}
+	if s.Parameters.LargeKeySizeMB > 0 {
+		base.ElastiCacheConfig.EnableLargeKey = true
+		base.ElastiCacheConfig.LargeKeySize = s.Parameters.LargeKeySizeMB
+	}
+	return base
+}
+
+func Run(config Configuration, duration time.Duration) {
 	log.Printf("%+v", config)
 
 	var done = make(chan struct{}, 1)
 
-	go func() {
-		os.Stdin.Read(make([]byte, 1))
-		close(done)
-	}()
+	if duration > 0 {
+		go func() {
+			<-time.After(duration)
+			close(done)
+		}()
+	} else {
+		go func() {
+			os.Stdin.Read(make([]byte, 1))
+			close(done)
+		}()
+	}
 
 	var wg sync.WaitGroup
 
@@ -61,7 +119,11 @@ func (*ElastiCacheChaos) Start() {
 	}
 
 	if config.ElastiCacheConfig.EnableCPUSpike {
-		for i := 0; i < 5; i++ { // Run multiple CPU spike goroutines
+		workers := config.ElastiCacheConfig.CPUSpikeWorkers
+		if workers == 0 {
+			workers = 5
+		}
+		for i := 0; i < workers; i++ {
 			wg.Add(1)
 			go cpuSpike(&wg, config, ctx)
 		}
@@ -75,6 +137,20 @@ func (*ElastiCacheChaos) Start() {
 	log.Println("waiting for all child goroutines to exit gracefully...")
 	wg.Wait()
 	log.Println("all goroutines finished.")
+}
+
+func cpuSpikeWorkers(cpuPercent int) int {
+	if cpuPercent <= 0 {
+		return 5
+	}
+	workers := (cpuPercent + 19) / 20
+	if workers < 1 {
+		return 1
+	}
+	if workers > 10 {
+		return 10
+	}
+	return workers
 }
 
 func floodElastiCache(wg *sync.WaitGroup, config Configuration, ctx context.Context) {

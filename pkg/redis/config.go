@@ -23,6 +23,8 @@ type RedisConfig struct {
 	CustomKeyPrefix      string  `json:"customkeyprefix"`
 	PoolSize             int     `json:"poolsize"`
 	IsKeysCommandEnabled bool    `json:"iskeyscommandenabled"`
+	EnableCPUSpike       bool    `json:"enableCpuSpike"`
+	CPUSpikeWorkers      int     `json:"cpuSpikeWorkers"`
 }
 
 type Options struct {
@@ -34,9 +36,9 @@ type Tls struct {
 	InsecureSkipVerify bool `json:"insecure"`
 }
 
-func loadConfig(path *string) Configuration {
+func LoadConfig(path string) Configuration {
 	var config Configuration = Configuration{}
-	raw, err := os.ReadFile(*path)
+	raw, err := os.ReadFile(path)
 
 	if err != nil {
 		panic(err)
@@ -48,4 +50,8 @@ func loadConfig(path *string) Configuration {
 		panic(unmarshalError)
 	}
 	return config
+}
+
+func loadConfig(path *string) Configuration {
+	return LoadConfig(*path)
 }

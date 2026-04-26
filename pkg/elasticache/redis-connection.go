@@ -24,13 +24,13 @@ type redisClient interface {
 func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 	client := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:    []string{fmt.Sprintf("%s:%s", config.ElastiCacheConfig.Host, strconv.Itoa(config.ElastiCacheConfig.Port))},
-		Password: "",
+		Password: config.ElastiCacheConfig.Password,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: config.ElastiCacheConfig.Options.Tls.InsecureSkipVerify,
 		},
 		ReadTimeout:  time.Duration(config.ElastiCacheConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.ElastiCacheConfig.WriteTimeout) * time.Second,
-		DialTimeout:  time.Duration(config.ElastiCacheConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.ElastiCacheConfig.DialTimeout) * time.Second,
 		PoolSize:     config.ElastiCacheConfig.PoolSize,
 	})
 	return client
@@ -39,11 +39,11 @@ func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 func getRedisClient(config Configuration) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%s", config.ElastiCacheConfig.Host, strconv.Itoa(config.ElastiCacheConfig.Port)),
-		Password:     "",
+		Password:     config.ElastiCacheConfig.Password,
 		DB:           config.ElastiCacheConfig.Db,
 		ReadTimeout:  time.Duration(config.ElastiCacheConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.ElastiCacheConfig.WriteTimeout) * time.Second,
-		DialTimeout:  time.Duration(config.ElastiCacheConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.ElastiCacheConfig.DialTimeout) * time.Second,
 		PoolSize:     config.ElastiCacheConfig.PoolSize,
 	})
 

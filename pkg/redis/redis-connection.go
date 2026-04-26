@@ -17,19 +17,20 @@ type redisClient interface {
 	Keys(context.Context, string) *redis.StringSliceCmd
 	HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd
 	Info(ctx context.Context, sections ...string) *redis.StringCmd
+	Eval(ctx context.Context, script string, keys []string, args ...interface{}) *redis.Cmd
 	Close() error
 }
 
 func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 	client := redis.NewClusterClient(&redis.ClusterOptions{
 		Addrs:    []string{fmt.Sprintf("%s:%s", config.RedisConfig.Host, strconv.Itoa(config.RedisConfig.Port))},
-		Password: "",
+		Password: config.RedisConfig.Password,
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: config.RedisConfig.Options.Tls.InsecureSkipVerify,
 		},
 		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
-		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.RedisConfig.DialTimeout) * time.Second,
 		PoolSize:     config.RedisConfig.PoolSize,
 	})
 	return client
@@ -38,11 +39,11 @@ func getRedisClusterClient(config Configuration) *redis.ClusterClient {
 func getRedisClient(config Configuration) *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:         fmt.Sprintf("%s:%s", config.RedisConfig.Host, strconv.Itoa(config.RedisConfig.Port)),
-		Password:     "",
+		Password:     config.RedisConfig.Password,
 		DB:           config.RedisConfig.Db,
 		ReadTimeout:  time.Duration(config.RedisConfig.ReadTimeout) * time.Second,
 		WriteTimeout: time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
-		DialTimeout:  time.Duration(config.RedisConfig.WriteTimeout) * time.Second,
+		DialTimeout:  time.Duration(config.RedisConfig.DialTimeout) * time.Second,
 		PoolSize:     config.RedisConfig.PoolSize,
 	})
 
