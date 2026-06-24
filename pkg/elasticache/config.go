@@ -28,6 +28,7 @@ type ElastiCacheConfig struct {
 	EnableLargeKey  bool `json:"enableLargeKey"`
 	LargeKeySize    int  `json:"largeKeySize"` // in MB
 	CPUSpikeWorkers int  `json:"cpuSpikeWorkers"`
+	KeepLargeKey    bool `json:"keepLargeKey"`
 }
 
 type Options struct {

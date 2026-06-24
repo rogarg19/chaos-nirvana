@@ -7,7 +7,9 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -75,19 +77,7 @@ func ConfigFromScenario(base Configuration, s scenario.Scenario) Configuration {
 func Run(config Configuration, duration time.Duration) {
 	log.Printf("%+v", config)
 
-	var done = make(chan struct{}, 1)
-
-	if duration > 0 {
-		go func() {
-			<-time.After(duration)
-			close(done)
-		}()
-	} else {
-		go func() {
-			os.Stdin.Read(make([]byte, 1))
-			close(done)
-		}()
-	}
+	done := waitForStop(duration)
 
 	var wg sync.WaitGroup
 
@@ -239,4 +229,36 @@ func randSeq(n int) string {
 		b[i] = letters[rand.Intn(len(letters))]
 	}
 	return string(b)
+}
+
+func waitForStop(duration time.Duration) <-chan struct{} {
+	done := make(chan struct{})
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		defer signal.Stop(stop)
+		defer close(done)
+		if duration > 0 {
+			timer := time.NewTimer(duration)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+			case <-stop:
+			}
+			return
+		}
+
+		stdinDone := make(chan struct{}, 1)
+		go func() {
+			_, _ = os.Stdin.Read(make([]byte, 1))
+			stdinDone <- struct{}{}
+		}()
+		select {
+		case <-stdinDone:
+		case <-stop:
+		}
+	}()
+
+	return done
 }

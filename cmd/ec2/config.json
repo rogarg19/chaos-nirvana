@@ -3,6 +3,8 @@
         "enableHighCpu" : true,
         "enableFullDisk" : true,
         "diskFillPath" : "/tmp/chaos",
-        "cpuCores" : 0
+        "cpuCores" : 0,
+        "maxDiskFillMb" : 512,
+        "keepDiskFile" : false
     }
 }

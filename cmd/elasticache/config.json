@@ -11,6 +11,7 @@
         "enableCpuSpike" : true,
         "enableLargeKey" : true,
         "largeKeySize" : 10,
+        "keepLargeKey" : false,
         "options" : {
             "connections" : 10,
             "tls" : {

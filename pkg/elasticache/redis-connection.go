@@ -14,6 +14,7 @@ type redisClient interface {
 	Ping(context.Context) *redis.StatusCmd
 	Get(context.Context, string) *redis.StringCmd
 	Set(context.Context, string, interface{}, time.Duration) *redis.StatusCmd
+	Del(context.Context, ...string) *redis.IntCmd
 	Keys(context.Context, string) *redis.StringSliceCmd
 	HGetAll(ctx context.Context, key string) *redis.MapStringStringCmd
 	Info(ctx context.Context, sections ...string) *redis.StringCmd

@@ -10,6 +10,9 @@ A comprehensive tool for chaos engineering simulations across various cloud serv
 - Graceful shutdown handling
 - JSON-based configuration
 - Plain-English scenario parsing for common chaos commands
+- Dry-run and preflight previews for safer execution
+- Blast-radius limits for Kubernetes pod deletion and disk-fill chaos
+- Cleanup for temporary disk files and injected large Redis keys
 
 ## Supported Services
 
@@ -51,7 +54,7 @@ Run the tool with the appropriate service type and configuration:
 Or run a plain-English scenario:
 
 ```bash
-./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout"
+./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout" -dry-run
 ```
 
 Preview the parsed scenario before executing it:
@@ -59,6 +62,21 @@ Preview the parsed scenario before executing it:
 ```bash
 ./chaos-nirvana -prompt "put load on redis cluster such that CPU usage spikes to 90% for more than 15 minutes" -dry-run
 ```
+
+Execute disruptive scenarios only after confirming intent:
+
+```bash
+./chaos-nirvana -prompt "Kill 2 pods with selector app=payments in namespace checkout" -yes
+```
+
+Safety flags:
+
+- `-yes`: required for disruptive actions such as Kubernetes pod deletion, EC2 disk fill, and ElastiCache large key injection.
+- `-dry-run`: prints the parsed scenario and any supported preflight plan without executing.
+- `-preflight`: validates supported targets before execution or dry-run. Enabled by default; use `-preflight=false` to skip.
+- `-max-pods`: maximum Kubernetes pods a run may delete. Defaults to 5.
+- `-max-disk-mb`: maximum data EC2 disk-fill chaos may write. Defaults to 512 MB.
+- `-keep-artifacts`: keep temporary chaos artifacts instead of cleaning them up.
 
 ### Examples
 
@@ -69,17 +87,18 @@ Preview the parsed scenario before executing it:
 
 #### ElastiCache Redis Chaos
 ```bash
-./chaos-nirvana -type elasticache -config cmd/elasticache/config.json
+./chaos-nirvana -type elasticache -config cmd/elasticache/config.json -yes
 ```
 
 #### EC2 Chaos
 ```bash
-./chaos-nirvana -type ec2 -config cmd/ec2/config.json
+./chaos-nirvana -type ec2 -config cmd/ec2/config.json -yes
 ```
 
 #### Kubernetes Pod Chaos
 ```bash
-./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout"
+./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout" -dry-run
+./chaos-nirvana -prompt "Kill 50% pods of service payments in namespace checkout" -yes
 ```
 
 By default, service prompts map to the selector `app=<service>`. You can provide an explicit selector:
@@ -105,12 +124,15 @@ Each service has its own configuration file in JSON format. Examples are provide
 - `enableCpuSpike`: Enable CPU spike simulation
 - `enableLargeKey`: Enable large key injection
 - `largeKeySize`: Size of large key in MB
+- `keepLargeKey`: Keep the injected large key after the run instead of deleting it
 
 ### EC2 Configuration
 - `enableHighCpu`: Enable high CPU simulation
 - `enableFullDisk`: Enable disk filling simulation
 - `diskFillPath`: Path to fill with data
 - `cpuCores`: Number of CPU cores to utilize (0 for all)
+- `maxDiskFillMb`: Maximum MB to write during disk-fill chaos
+- `keepDiskFile`: Keep the generated disk-fill file after the run instead of deleting it
 
 ## Warning
 

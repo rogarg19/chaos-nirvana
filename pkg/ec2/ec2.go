@@ -6,14 +6,18 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/signal"
 	"runtime"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/rogarg19/chaos-nirvana/pkg/scenario"
 )
 
 type EC2Chaos struct{}
+
+const DefaultMaxDiskFillMB = 512
 
 func New() *EC2Chaos {
 	return &EC2Chaos{}
@@ -41,22 +45,21 @@ func ConfigFromScenario(base Configuration, s scenario.Scenario) Configuration {
 	return base
 }
 
+func ApplySafetyDefaults(config Configuration, maxDiskFillMB int, keepDiskFile bool) Configuration {
+	if maxDiskFillMB <= 0 {
+		maxDiskFillMB = DefaultMaxDiskFillMB
+	}
+	if config.EC2Config.MaxDiskFillMB <= 0 || config.EC2Config.MaxDiskFillMB > maxDiskFillMB {
+		config.EC2Config.MaxDiskFillMB = maxDiskFillMB
+	}
+	config.EC2Config.KeepDiskFile = keepDiskFile || config.EC2Config.KeepDiskFile
+	return config
+}
+
 func Run(config Configuration, duration time.Duration) {
 	log.Printf("%+v", config)
 
-	var done = make(chan struct{}, 1)
-
-	if duration > 0 {
-		go func() {
-			<-time.After(duration)
-			close(done)
-		}()
-	} else {
-		go func() {
-			os.Stdin.Read(make([]byte, 1))
-			close(done)
-		}()
-	}
+	done := waitForStop(duration)
 
 	var wg sync.WaitGroup
 
@@ -116,15 +119,32 @@ func fullDisk(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 		path = "/tmp/chaos_fill"
 	}
 
-	log.Printf("Starting full disk simulation at %s", path)
+	maxBytes := int64(config.EC2Config.MaxDiskFillMB) * 1024 * 1024
+	if maxBytes <= 0 {
+		maxBytes = int64(DefaultMaxDiskFillMB) * 1024 * 1024
+	}
+
+	log.Printf("Starting full disk simulation at %s with limit %d MB", path, maxBytes/(1024*1024))
 
 	// Create directory if needed
-	os.MkdirAll(path, 0755)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		log.Printf("Failed to create disk fill directory %s: %v", path, err)
+		return
+	}
 
 	file, err := os.CreateTemp(path, "chaos_*")
 	if err != nil {
 		log.Printf("Failed to create temp file: %v", err)
 		return
+	}
+	if !config.EC2Config.KeepDiskFile {
+		defer func() {
+			if err := os.Remove(file.Name()); err != nil {
+				log.Printf("Failed to clean up disk fill file %s: %v", file.Name(), err)
+				return
+			}
+			log.Printf("Cleaned up disk fill file %s", file.Name())
+		}()
 	}
 	defer file.Close()
 
@@ -133,17 +153,59 @@ func fullDisk(wg *sync.WaitGroup, config Configuration, ctx context.Context) {
 		data[i] = byte(i % 256)
 	}
 
+	var written int64
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		default:
-			_, err := file.Write(data)
+			if written >= maxBytes {
+				log.Printf("Reached max disk fill limit after writing %d MB", written/(1024*1024))
+				return
+			}
+			chunk := data
+			if remaining := maxBytes - written; remaining < int64(len(data)) {
+				chunk = data[:int(remaining)]
+			}
+			n, err := file.Write(chunk)
 			if err != nil {
 				log.Printf("Disk full or error: %v", err)
 				return
 			}
+			written += int64(n)
 			file.Sync() // Force write to disk
 		}
 	}
+}
+
+func waitForStop(duration time.Duration) <-chan struct{} {
+	done := make(chan struct{})
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		defer signal.Stop(stop)
+		defer close(done)
+		if duration > 0 {
+			timer := time.NewTimer(duration)
+			defer timer.Stop()
+			select {
+			case <-timer.C:
+			case <-stop:
+			}
+			return
+		}
+
+		stdinDone := make(chan struct{}, 1)
+		go func() {
+			_, _ = os.Stdin.Read(make([]byte, 1))
+			stdinDone <- struct{}{}
+		}()
+		select {
+		case <-stdinDone:
+		case <-stop:
+		}
+	}()
+
+	return done
 }

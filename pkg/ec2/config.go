@@ -14,6 +14,8 @@ type EC2Config struct {
 	EnableFullDisk bool   `json:"enableFullDisk"`
 	DiskFillPath   string `json:"diskFillPath"` // Path to fill disk, e.g., "/tmp/chaos"
 	CPUCores       int    `json:"cpuCores"`     // Number of cores to utilize
+	MaxDiskFillMB  int    `json:"maxDiskFillMb"`
+	KeepDiskFile   bool   `json:"keepDiskFile"`
 }
 
 func LoadConfig(path string) Configuration {

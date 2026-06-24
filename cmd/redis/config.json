@@ -1,5 +1,5 @@
 {
-    "Redis" : {
+    "redis" : {
         "host" : "localhost",
         "isCluster" : false,
         "port" : 6379,
